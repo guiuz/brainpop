@@ -36,7 +36,7 @@ jest.mock('react-native-google-mobile-ads', () => ({
     ERROR: 'ad_error',
   },
   TestIds: {
-    REWARDED: 'ca-app-pub-3940256099942544/5224354917',
+    REWARDED: 'TEST_REWARDED',
   },
   MaxAdContentRating: {
     G: 'G',
