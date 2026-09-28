@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Funções auxiliares de autenticação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validação estrita de criação de perfil inicial para evitar fraude de atributos no signup
+    function isValidInitialEconomics(data) {
+      return (!('coins' in data) || (data.coins is int && data.coins <= 500 && data.coins >= 0))
+          && (!('gems' in data) || (data.gems is int && data.gems <= 50 && data.gems >= 0))
+          && (!('lives' in data) || (data.lives is int && data.lives <= 5 && data.lives >= 0))
+          && (!('xp' in data) || (data.xp is int && data.xp == 0))
+          && (!('totalXp' in data) || (data.totalXp is int && data.totalXp == 0))
+          && (!('level' in data) || (data.level is int && data.level == 1))
+          && (!('duelTrophies' in data) || (data.duelTrophies is int && data.duelTrophies == 0));
+    }
+
+    // Whitelist estrita de campos permitidos para atualização direta pelo próprio titular.
+    // - Removidos: title, lastActiveDate, updatedAt, name, friends, coins, gems, lives, xp, totalXp, level, duelTrophies, inventory, stats.
+    // - A alteração de nome (name) possui custo em moedas (10.000) e moderação, sendo delegada a Cloud Functions.
+    // - Validação rigorosa de tipo, tamanho e formato em cada campo permitido.
+    function isValidUserUpdate(userId) {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let data = request.resource.data;
+
+      return isOwner(userId) &&
+        affected.hasOnly([
+          'avatarUrl',
+          'settings',
+          'fcmToken',
+          'hasCompletedOnboarding',
+          'hasConfiguredInitialPermissions'
+        ]) &&
+        (!affected.hasAny(['avatarUrl']) || (
+          data.avatarUrl is string && 
+          data.avatarUrl.size() > 0 && 
+          data.avatarUrl.size() <= 500 && 
+          (data.avatarUrl.matches('^https://.*') || data.avatarUrl.matches('^http://.*'))
+        )) &&
+        (!affected.hasAny(['settings']) || (
+          data.settings is map &&
+          (!('soundEnabled' in data.settings) || data.settings.soundEnabled is bool) &&
+          (!('vibrationEnabled' in data.settings) || data.settings.vibrationEnabled is bool) &&
+          (!('notificationsEnabled' in data.settings) || data.settings.notificationsEnabled is bool)
+        )) &&
+        (!affected.hasAny(['fcmToken']) || (
+          data.fcmToken is string && 
+          data.fcmToken.size() > 0 && 
+          data.fcmToken.size() <= 500
+        )) &&
+        (!affected.hasAny(['hasCompletedOnboarding']) || data.hasCompletedOnboarding is bool) &&
+        (!affected.hasAny(['hasConfiguredInitialPermissions']) || data.hasConfiguredInitialPermissions is bool);
+    }
+
+    // Coleção de Usuários
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidInitialEconomics(request.resource.data);
+      allow update: if isValidUserUpdate(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Coleção de Partidas e Histórico Pessoal
+    match /matches/{matchId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.score is int
+                    && request.resource.data.score >= 0
+                    && request.resource.data.score <= 5000;
+      allow update, delete: if false;
+    }
+
+    // Coleção de Duelos
+    match /duels/{duelId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.player1Id == request.auth.uid || resource.data.player2Id == request.auth.uid);
+      allow create: if isAuthenticated() 
+                    && request.resource.data.player1Id == request.auth.uid
+                    && !('winner' in request.resource.data)
+                    && (!('status' in request.resource.data) || request.resource.data.status == 'waiting');
+      allow update, delete: if false;
+    }
+
+    // Bloqueio de segurança padrão para qualquer documento não explicitamente mapeado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

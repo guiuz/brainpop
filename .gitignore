@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+package-lock.json.bak
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+android/
+ios/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.apk
+*.aab
+
+# Metro
+.metro-health-check*
+
+# Environment & Credentials
+.env
+.env.*
+!.env.example
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk-*.json
+*service-account*.json
+
+# Testing & Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Resíduos antigos
+BrainPOP/
+Logo/__Assets/

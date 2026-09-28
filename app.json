@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "BrainPOP",
+    "slug": "brainpop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./Logo/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./Logo/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F8FAFC"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.brainpop.app",
+      "buildNumber": "1"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./Logo/adaptive-icon.png",
+        "backgroundColor": "#F8FAFC"
+      },
+      "package": "com.brainpop.app",
+      "versionCode": 5
+    },
+    "web": {
+      "favicon": "./Logo/icon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "@react-native-google-signin/google-signin"
+    ],
+    "scheme": "brainpop",
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    },
+    "owner": "theguiuz"
+  }
+}
